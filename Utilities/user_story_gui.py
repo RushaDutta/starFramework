@@ -6,8 +6,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 # Configuration
-DEFAULT_CSV_PATH = "dummy_user_stories.csv"   # Uses your attached CSV file name
-XML_OUTPUT_PATH = "stories.xml"               # Output XML file
+DEFAULT_CSV_PATH = "./Test/testdata/dummy_user_stories.csv"   # Uses your attached CSV file name
+XML_OUTPUT_PATH = "./Output/stories.xml"               # Output XML file
 
 # XML helpers
 def ensure_xml_root(xml_path):
