@@ -1,1 +1,4 @@
+# Ignore API keys, secrets, or config files
+api_key.txt
+secrets.env
 Output/stories.xml
