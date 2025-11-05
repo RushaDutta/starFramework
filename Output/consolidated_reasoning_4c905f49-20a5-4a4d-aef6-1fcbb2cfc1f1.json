@@ -1,0 +1,36 @@
+[
+  {
+    "jira_key": "SCRUM-5",
+    "summary": "Security Enhancement",
+    "description": "",
+    "reporter": "Rusha Dutta",
+    "stakeholders": "",
+    "evidence": "",
+    "module": "",
+    "session_id": "4c905f49-20a5-4a4d-aef6-1fcbb2cfc1f1",
+    "facilitator_id": "abc@qq.com",
+    "timestamp": "2025-11-05T17:46:13Z",
+    "value_agreement": "good feature to increase customer engagement",
+    "dissent": "requires massive testing effort",
+    "dependencies": "infrastructure",
+    "biases": "pushed by ceo",
+    "synthesis_summary": "needs to be validated extensively but still a good feature to have"
+  },
+  {
+    "jira_key": "SCRUM-2",
+    "summary": "Task 2",
+    "description": "",
+    "reporter": "Rusha Dutta",
+    "stakeholders": "",
+    "evidence": "",
+    "module": "",
+    "session_id": "4c905f49-20a5-4a4d-aef6-1fcbb2cfc1f1",
+    "facilitator_id": "abc@qq.com",
+    "timestamp": "2025-11-05T17:47:27Z",
+    "value_agreement": "boosts security",
+    "dissent": "might break often",
+    "dependencies": "massive refactoring",
+    "biases": "none",
+    "synthesis_summary": "offers moderate improvement in security but massive time and effort needed"
+  }
+]
