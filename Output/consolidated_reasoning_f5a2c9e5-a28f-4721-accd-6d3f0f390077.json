@@ -1,0 +1,19 @@
+[
+  {
+    "jira_key": "SCRUM-2",
+    "summary": "Task 2",
+    "description": "",
+    "reporter": "Rusha Dutta",
+    "stakeholders": "",
+    "evidence": "",
+    "module": "",
+    "session_id": "f5a2c9e5-a28f-4721-accd-6d3f0f390077",
+    "facilitator_id": "ass@fc.com",
+    "timestamp": "2025-11-05T08:28:25Z",
+    "value_agreement": "WW",
+    "dissent": "aS",
+    "dependencies": "Q",
+    "biases": "QQ",
+    "synthesis_summary": "WWW"
+  }
+]
