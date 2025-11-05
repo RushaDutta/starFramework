@@ -1,0 +1,19 @@
+[
+  {
+    "jira_key": "SCRUM-5",
+    "summary": "Security Enhancement",
+    "description": "",
+    "reporter": "Rusha Dutta",
+    "stakeholders": "",
+    "evidence": "",
+    "module": "",
+    "session_id": "abc98d9b-d4ec-4973-a0bd-4be7d026e739",
+    "facilitator_id": "abc@fff.com",
+    "timestamp": "2025-11-05T17:55:49Z",
+    "value_agreement": "good to have",
+    "dissent": "takes too much time",
+    "dependencies": "none",
+    "biases": "none",
+    "synthesis_summary": "good to have"
+  }
+]
