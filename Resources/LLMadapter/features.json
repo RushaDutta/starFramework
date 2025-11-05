@@ -1,0 +1,18 @@
+[
+  {
+    "jira_key": "SCRUM-2",
+    "summary": "Speed up API response times for data fetching",
+    "description": "Optimize backend APIs to reduce response latency below 200ms.",
+    "reporter": "Rusha Dutta",
+    "stakeholders": ["Performance Lead", "Backend Dev Lead", "Product Owner"],
+    "evidence": "",
+    "module": "API",
+    "session_id": "42bc18e6-a327-4f5a-a71f-27b92b5bc51f",
+    "facilitator_id": "aass",
+    "timestamp": "2025-11-05T07:58:32Z",
+    "value_agreement": "Significant improvement in user experience and scalability discussed.",
+    "dissent": "Backend Dev Lead concerned about increased complexity and rollout risk.",
+    "dependencies": "Dependent on database indexing improvements and caching layer.",
+    "biases": "Management pushing due to customer complaints despite moderate urgency.",
+    "synthesis_summary": "Consensus on performance gains with caution on implementation complexity."
+  }]

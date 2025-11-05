@@ -4,16 +4,35 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
+from git import Repo
 
-# Configuration
-DEFAULT_CSV_PATH = "./Test/testdata/dummy_user_stories.csv"   # Uses your attached CSV file name
-XML_OUTPUT_PATH = "./Output/stories.xml"               # Output XML file
+# Git repo info
+GIT_REPO_URL = "https://github.com/RushaDutta/starFramework.git"  # Change this to your repo URL
+LOCAL_REPO_DIR = "C:/temp_repo/"  # Local folder path for cloning
+CSV_PATH_IN_REPO = "Test/testdata/dummy_user_stories.csv"  # Relative CSV path inside repo
+XML_PATH_IN_REPO = "Output/stories.xml"  # Relative XML output path inside repo
+
+# Clone or update the git repository to ensure latest
+def clone_or_update_repo():
+    if not os.path.exists(LOCAL_REPO_DIR):
+        print("Cloning repo...")
+        Repo.clone_from(GIT_REPO_URL, LOCAL_REPO_DIR)
+    else:
+        print("Fetching latest changes...")
+        repo = Repo(LOCAL_REPO_DIR)
+        origin = repo.remotes.origin
+        origin.pull()
+
+# Set file paths to be inside the local clone of Git repo
+DEFAULT_CSV_PATH = os.path.join(LOCAL_REPO_DIR, CSV_PATH_IN_REPO)
+XML_OUTPUT_PATH = os.path.join(LOCAL_REPO_DIR, XML_PATH_IN_REPO)
 
 # XML helpers
 def ensure_xml_root(xml_path):
     if not os.path.exists(xml_path) or os.path.getsize(xml_path) == 0:
         root = ET.Element("Stories")
         tree = ET.ElementTree(root)
+        os.makedirs(os.path.dirname(xml_path), exist_ok=True)
         tree.write(xml_path, encoding="utf-8", xml_declaration=True)
     tree = ET.parse(xml_path)
     return tree
@@ -54,7 +73,16 @@ def append_story(xml_tree, story_payload):
 
     xml_tree.write(XML_OUTPUT_PATH, encoding="utf-8", xml_declaration=True)
 
-# App
+def commit_changes(user_story_id):
+    repo = Repo(LOCAL_REPO_DIR)
+    repo.git.add(XML_PATH_IN_REPO)
+    commit_msg = f"Add details for UserStoryID {user_story_id}"
+    repo.index.commit(commit_msg)
+    origin = repo.remotes.origin
+    origin.push()
+    print(f"Committed and pushed changes for {user_story_id}")
+
+# Tkinter App
 class StoryApp:
     def __init__(self, root):
         self.root = root
@@ -71,7 +99,7 @@ class StoryApp:
     def build_layout(self):
         pad = {"padx": 8, "pady": 6}
 
-        # Top: CSV chooser
+        # Top: CSV filepath display and reload
         top_frame = ttk.Frame(self.root)
         top_frame.pack(fill="x", **pad)
 
@@ -82,7 +110,7 @@ class StoryApp:
         ttk.Button(top_frame, text="Browse", command=self.browse_csv).pack(side="left")
         ttk.Button(top_frame, text="Reload", command=self.reload_csv).pack(side="left", padx=4)
 
-        # Selector
+        # UserStoryID selector
         sel_frame = ttk.LabelFrame(self.root, text="Select User Story")
         sel_frame.pack(fill="x", **pad)
 
@@ -92,7 +120,7 @@ class StoryApp:
         self.user_story_combo.grid(row=0, column=1, sticky="w", **pad)
         self.user_story_combo.bind("<<ComboboxSelected>>", self.on_story_selected)
 
-        # Auto-populated (read-only)
+        # Auto-populated fields (readonly)
         auto_frame = ttk.LabelFrame(self.root, text="Auto-populated from CSV")
         auto_frame.pack(fill="x", **pad)
 
@@ -122,7 +150,7 @@ class StoryApp:
         self.description_text.grid(row=4, column=1, sticky="we", **pad)
         self.description_text.configure(state="disabled")
 
-        # Inputs
+        # Input fields
         inputs_frame = ttk.LabelFrame(self.root, text="PM & Team Inputs")
         inputs_frame.pack(fill="x", **pad)
 
@@ -186,18 +214,15 @@ class StoryApp:
             messagebox.showerror("Error", f"Failed to load CSV:\n{e}")
             return
 
-        # Index by UserStoryID
         self.story_by_id = {}
         for row in self.csv_data:
             sid = row.get("UserStoryID", "").strip()
             if sid:
                 self.story_by_id[sid] = row
 
-        # Populate combobox
         ids = sorted(self.story_by_id.keys())
         self.user_story_combo["values"] = ids
         self.user_story_var.set("")
-        # Reset fields
         self.clear_autofill()
         self.clear_inputs()
         self.configure_initial_state()
@@ -223,7 +248,6 @@ class StoryApp:
             self.set_inputs_state("disabled")
             return
 
-        # Autofill
         self.jira_var.set(row.get("JiraID", ""))
         self.title_var.set(row.get("Title", ""))
         self.author_var.set(row.get("Author", ""))
@@ -233,7 +257,6 @@ class StoryApp:
         self.description_text.insert("1.0", row.get("Description", ""))
         self.description_text.configure(state="disabled")
 
-        # Enable inputs and submit
         self.set_inputs_state("normal")
 
     def gather_payload(self):
@@ -255,16 +278,12 @@ class StoryApp:
         for key, (var, _) in self.inputs.items():
             payload[key] = var.get().strip()
 
-        # Optional: Basic validation examples
-        # If you want to enforce DiscussionDate format ISO 8601:
         dd = payload.get("DiscussionDate", "")
         if dd:
             try:
-                # Allow various common formats; stored as-is if parseable
                 _ = datetime.fromisoformat(dd.replace("Z", "+00:00")) if ("T" in dd or "-" in dd) else datetime.strptime(dd, "%Y-%m-%d")
             except Exception:
-                if not messagebox.askyesno("Date format",
-                    "DiscussionDate doesn't look ISO 8601. Continue anyway?"):
+                if not messagebox.askyesno("Date format", "DiscussionDate doesn't look ISO 8601. Continue anyway?"):
                     return None
 
         return payload
@@ -274,18 +293,18 @@ class StoryApp:
         if not payload:
             return
 
-        # Load/create XML, check duplication, append
         tree = ensure_xml_root(XML_OUTPUT_PATH)
         if story_exists(tree, payload["UserStoryID"]):
             messagebox.showerror("Duplicate", f"UserStoryID {payload['UserStoryID']} already exists in {XML_OUTPUT_PATH}.")
             return
 
         append_story(tree, payload)
+        commit_changes(payload["UserStoryID"])
         messagebox.showinfo("Saved", f"Story {payload['UserStoryID']} appended to {XML_OUTPUT_PATH}.")
-        # Optionally lock inputs after save:
         self.set_inputs_state("disabled")
 
 def main():
+    clone_or_update_repo()
     root = tk.Tk()
     app = StoryApp(root)
     root.mainloop()

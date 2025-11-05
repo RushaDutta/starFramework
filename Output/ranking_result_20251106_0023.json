@@ -1,0 +1,21 @@
+[
+  {
+    "jira_key": "SCRUM-5",
+    "summary": "Security Enhancement",
+    "description": "",
+    "reporter": "Rusha Dutta",
+    "stakeholders": "",
+    "evidence": "",
+    "module": "",
+    "session_id": "74c2a56c-367c-474f-b736-6108dda79937",
+    "facilitator_id": "aaa@ggg.com",
+    "timestamp": "2025-11-05T18:53:45Z",
+    "value_agreement": "sdf",
+    "dissent": "sd",
+    "dependencies": "sd",
+    "biases": "dd",
+    "synthesis_summary": "sddd",
+    "priority_score": 9,
+    "rationale": "The feature summary explicitly states 'Security Enhancement,' which inherently implies criticality. However, the absence of concrete details (e.g., stakeholders, evidence, or impact metrics) limits the ability to justify a higher priority. Security-related features typically warrant high priority, but without additional context, the score reflects moderate urgency."
+  }
+]
