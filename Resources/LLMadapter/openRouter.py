@@ -7,14 +7,9 @@ import datetime
 import gspread
 from google.oauth2.service_account import Credentials
 
-def get_reflexive_feedback(sheet_url, worksheet_name):
-    # Load credentials JSON from environment variable (never write to disk!)
-    google_creds_json = os.environ.get("GOOGLE_CREDS_JSON")
-    if not google_creds_json:
-        raise RuntimeError("Missing GOOGLE_CREDS_JSON environment variable")
-    creds_dict = json.loads(google_creds_json)
+def get_reflexive_feedback(sheet_url, worksheet_name, creds_path):
     scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-    credentials = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+    credentials = Credentials.from_service_account_file(creds_path, scopes=scopes)
     gc = gspread.authorize(credentials)
     sh = gc.open_by_url(sheet_url)
     worksheet = sh.worksheet(worksheet_name)
@@ -65,14 +60,7 @@ def send_openrouter_request(features_path, session_folder, feedback_json):
         ]
     }
 
-    # Prepare logging to session folder
-    log_filename = os.path.join(session_folder, "debug-prints.log")
-    logging.basicConfig(
-        filename=log_filename,
-        level=logging.DEBUG,
-        format='%(asctime)s %(levelname)s %(message)s'
-    )
-
+    
     logging.info("Request URL: %s", url)
     logging.info("Request Headers: %s", headers)
     logging.info("Request Body: %s", json.dumps(payload, indent=2))
@@ -135,13 +123,23 @@ def send_openrouter_request(features_path, session_folder, feedback_json):
         return ""
 
 if __name__ == "__main__":
-    sheet_url = "https://docs.google.com/spreadsheets/d/YOUR-SPREADSHEET-ID"
-    worksheet_name = "reflexive_feedback"
+    sheet_url = "https://docs.google.com/spreadsheets/d/1XMgrnVNwMaQ_o2QSLVyAWC59TKhPvqr2_z9Z75h_1x4"
+    worksheet_name = "Sheet1"
+    creds_path = "test-secrets/jiraintegration-credential.json"
     features_path = sys.argv[1] if len(sys.argv) > 1 else "Resources/LLMadapter/features.json"
     session_folder = sys.argv[2] if len(sys.argv) > 2 else "Output/Session9999_default"
 
+    # Prepare logging to session folder
+    log_filename = os.path.join(session_folder, "debug-prints.log")
+    logging.basicConfig(
+        filename=log_filename,
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(message)s'
+    )
+    logging.info("In Openrouter.py")
+
     # 1. Read reflexive feedback data from Google Sheets using secret credentials from env
-    feedback_data = get_reflexive_feedback(sheet_url, worksheet_name)
+    feedback_data = get_reflexive_feedback(sheet_url, worksheet_name, creds_path)
     feedback_json = json.dumps(feedback_data, indent=2)
 
     # 2. Send request with both feature list and feedback
