@@ -8,6 +8,35 @@ import tkinter.font
 from tkinter import ttk, messagebox, filedialog, simpledialog
 import sys
 
+# Field mapping from CSV header to normalized field names
+FIELD_MAPPING = {
+    "issue type": "issue_type",
+    "issue key": "issue_key",
+    "issue id": "issue_id",
+    "summary": "summary",
+    "reporter": "reporter",
+    "reporter id": "reporter_id",
+    "status": "status",
+    "custom field (evidencelink)": "custom_field_evidencelink",
+    "description": "description",
+    "labels": "labels",
+    "custom field (stakeholders)": "custom_field_stakeholders",
+    "custom field (module)": "custom_field_module",
+}
+
+# All fields needed from CSV/Jira export
+DETAIL_FIELDS = [
+    "issue_type", "issue_key", "issue_id", "summary", "reporter", "reporter_id", "status",
+    "custom_field_evidencelink", "description", "labels",
+    "custom_field_stakeholders", "custom_field_module"
+]
+
+OUTCOME_FIELDS = ["value_agreement", "dissent", "dependencies", "biases"]
+
+def normalize_header(header):
+    # Normalize, strip, lower, and map via FIELD_MAPPING
+    return FIELD_MAPPING.get(header.strip().lower(), header.strip().lower())
+
 def load_all_json(json_path):
     if not os.path.exists(json_path):
         return []
@@ -25,11 +54,7 @@ def save_all_json(json_path, data):
         json.dump(data, f, indent=2)
 
 def validate_json_schema(data):
-    required = [
-        "jira_key", "summary", "description", "reporter", "stakeholders", "evidence", "module",
-        "value_agreement", "dissent", "dependencies", "biases", "synthesis_summary",
-        "session_id", "facilitator_id", "timestamp"
-    ]
+    required = DETAIL_FIELDS + OUTCOME_FIELDS + ["session_id", "facilitator_id", "timestamp"]
     for idx, record in enumerate(data):
         for k in required:
             if k not in record:
@@ -74,16 +99,14 @@ class StoryApp:
         self.root = root
         self.root.title("STAR Workshop Tool")
         self.root.configure(bg="#e3eafc")
-
-        # Accept session folder/external session id (do NOT generate yourself unless debug/manual run!)
         self.session_folder = session_folder
         self.session_id = os.path.basename(session_folder)
         self.data_json_path = os.path.join(self.session_folder, "consolidated_reasoning.json")
-
         self.facilitator_id = facilitator_id
         self.csv_data = []
         self.story_by_key = {}
         self.entry_fields = {}
+        self.detail_vars = {}
         self.loaded_json = load_all_json(self.data_json_path)
         self.setup_styles()
         self.build_layout()
@@ -107,7 +130,6 @@ class StoryApp:
         pad_y = 10
         loader = ttk.Frame(self.root)
         loader.pack(fill="x", padx=pad_x, pady=pad_y)
-        # Session label at top right
         self.session_label = ttk.Label(
             loader,
             text=f"Session: {self.session_id}",
@@ -132,9 +154,9 @@ class StoryApp:
 
         autofill_frame = ttk.LabelFrame(self.root, text="2. Story Details", style="Section.TLabelframe", labelanchor="nw", padding=(pad_x, pad_y))
         autofill_frame.pack(fill="x", padx=pad_x, pady=pad_y)
-        self.detail_vars = {}
-        for idx, field in enumerate(["summary", "description", "reporter", "stakeholders", "evidence", "module"]):
-            label = ttk.Label(autofill_frame, text=f"{field.title()}:")
+        # Add all detail fields as read-only entries (use Text widget for description)
+        for idx, field in enumerate(DETAIL_FIELDS):
+            label = ttk.Label(autofill_frame, text=f"{field.replace('_', ' ').title()}:")
             label.grid(row=idx, column=0, sticky="w")
             if field == "description":
                 desc_widget = tk.Text(autofill_frame, height=3, width=52, bg="#f1f8e9", wrap="word", font=('Arial', 12))
@@ -147,13 +169,8 @@ class StoryApp:
 
         entry_frame = ttk.LabelFrame(self.root, text="3. Facilitation Outcome", style="Section.TLabelframe", labelanchor="nw", padding=(pad_x, pad_y))
         entry_frame.pack(fill="x", padx=pad_x, pady=pad_y)
-        fields = [("value_agreement", "Value Agreement"),
-                  ("dissent", "Dissenting Opinion"),
-                  ("dependencies", "Dependencies"),
-                  ("biases", "Biases Observed"),
-                  ("synthesis_summary", "Synthesis Summary")]
-        for idx, (field, label) in enumerate(fields):
-            l = ttk.Label(entry_frame, text=f"{label}:")
+        for idx, field in enumerate(OUTCOME_FIELDS):
+            l = ttk.Label(entry_frame, text=f"{field.replace('_', ' ').title()}:")
             l.grid(row=idx, column=0, sticky="w")
             var = tk.StringVar()
             entry = ttk.Entry(entry_frame, textvariable=var, width=54)
@@ -182,8 +199,11 @@ class StoryApp:
         try:
             with open(path, newline='', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
-                self.csv_data = [row for row in reader]
-            self.story_by_key = {row["Issue key"]: row for row in self.csv_data if "Issue key" in row}
+                self.csv_data = [
+                    {normalize_header(k): v for k, v in row.items()}
+                    for row in reader
+                ]
+            self.story_by_key = {row.get("issue_key"): row for row in self.csv_data if row.get("issue_key")}
             keys = sorted(self.story_by_key.keys())
             self.jira_key_combo['values'] = keys
             self.jira_key_var.set("")
@@ -198,8 +218,8 @@ class StoryApp:
             self.reset_details_and_inputs()
             self.disable_all_except_jira_key()
             return
-        for field in ["summary", "description", "reporter", "stakeholders", "evidence", "module"]:
-            value = row.get(field.title(), "") or row.get(field, "")
+        for field in DETAIL_FIELDS:
+            value = row.get(field, "")
             if field == "description":
                 self.detail_vars[field].configure(state="normal")
                 self.detail_vars[field].delete("1.0", "end")
@@ -221,8 +241,8 @@ class StoryApp:
             entry.configure(state="normal")
 
     def reset_details_and_inputs(self):
-        for v in self.detail_vars.values():
-            if isinstance(v, tk.Text):
+        for k, v in self.detail_vars.items():
+            if k == "description":
                 v.configure(state="normal")
                 v.delete("1.0", "end")
                 v.configure(state="disabled")
@@ -239,24 +259,22 @@ class StoryApp:
         if not key:
             messagebox.showwarning("Missing", "Please select a Jira Issue Key.")
             return
-        existing = [r for r in self.loaded_json if r.get("jira_key") == key and r.get("session_id") == self.session_id]
+        existing = [r for r in self.loaded_json if r.get("issue_key") == key and r.get("session_id") == self.session_id]
         if existing:
             messagebox.showerror("Duplicate", f"Jira Issue {key} has already been entered in this session.")
             return
         row = self.story_by_key.get(key, {})
-        record = {
-            "jira_key": key,
-            "summary": row.get("Summary", "") or row.get("summary", ""),
-            "description": row.get("Description", "") or row.get("description", ""),
-            "reporter": row.get("Reporter", "") or row.get("reporter", ""),
-            "stakeholders": row.get("Stakeholders", "") or row.get("stakeholders", ""),
-            "evidence": row.get("Evidence", "") or row.get("evidence", ""),
-            "module": row.get("Module", "") or row.get("module", ""),
+        record = {}
+        for field in DETAIL_FIELDS:
+            record[field] = row.get(field, "")
+        # Session/facilitator/timestamp
+        record.update({
             "session_id": self.session_id,
             "facilitator_id": self.facilitator_id,
-            "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z"
-        }
-        for k in ["value_agreement", "dissent", "dependencies", "biases", "synthesis_summary"]:
+            "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        })
+        # Facilitation outcome entries
+        for k in OUTCOME_FIELDS:
             record[k] = self.entry_fields[k][0].get()
         self.loaded_json.append(record)
         save_all_json(self.data_json_path, self.loaded_json)
@@ -278,14 +296,12 @@ class StoryApp:
             messagebox.showerror("Validation Error", f"Could not finalize session:\n{e}")
 
 def main():
-    # Accept session folder from command line (or generate if manual/debug run)
     if len(sys.argv) > 1:
         session_folder = sys.argv[1]
         if not os.path.exists(session_folder):
             os.makedirs(session_folder)
         session_id = os.path.basename(session_folder)
     else:
-        # fallback for debug/manual usage
         import random
         randnum = random.randint(1000, 9999)
         dt = datetime.now().strftime("%Y%m%d%H%M%S")

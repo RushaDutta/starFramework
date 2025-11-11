@@ -37,7 +37,8 @@ def send_openrouter_request(features_path, session_folder):
                     "the deviations in the prioritization, and the post-release feedback, and incorporate this "
                     "analysis into your final priority evaluation. "
                     "Try to avoid assigning the same priority to more than one feature. Return the output in JSON array format, "
-                    "with each 'decision_card' json object containing all inputs, a priority_score, and a rationale. "
+                    "with each 'decision_card' json object containing jira id, summary, value agreement, dissent, dependencies,"
+                    ", synthesis summary, a priority_score, and a rationale. "
                     "Do not return anything else.\nJSON:\n"
                     f"{json_string}"
                 )

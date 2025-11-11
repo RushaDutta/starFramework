@@ -71,7 +71,7 @@ class STAR(tk.Tk):
         # Reflexive Summary viewer button
         self.btn_summary = ttk.Button(
             main_frame,
-            text="View Reflexive Cycle Summary",
+            text="View Reflexive Summary",
             command=self.launch_summary,
             state=tk.DISABLED
         )
@@ -198,16 +198,12 @@ class STAR(tk.Tk):
             messagebox.showerror("Error", f"Could not open HTML file:\n{str(e)}")
 
     def launch_summary(self):
-        path = self.summary_path
+        url = "https://rushadutta.github.io/jira-webhook-service/latest_report.html"
         try:
-            if sys.platform == "win32":
-                os.startfile(path)
-            elif sys.platform == "darwin":
-                subprocess.Popen(["open", path])
-            else:
-                subprocess.Popen(["xdg-open", path])
+            import webbrowser
+            webbrowser.open(url)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open Reflexive Summary file:\n{str(e)}")
+            messagebox.showerror("Error", f"Could not open Reflexive Summary report online:\n{str(e)}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
